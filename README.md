@@ -117,13 +117,24 @@ docker exec -it tg-bot date
 docker build --no-cache -t tg-premium-bot .
 ```
 
+**Database Connection Error:**
+If you see `unique` not valid for _id index, the database indexes are corrupted. The bot handles this automatically now.
+
+**Pending Tasks Warning:**
+The bot now shuts down gracefully to prevent "coroutine was never awaited" warnings.
+
 **Connection Issues:**
 - Ensure all environment variables are set correctly
 - Check bot token and API credentials
 - Verify network connectivity
+- Check MongoDB URI and database access
 
-**Environment File:**
-Create a `.env` file in the project root with your bot credentials before building.
+**Environment Variables Required:**
+- `BOT_TOKEN` - Your Telegram bot token
+- `API_ID` - Telegram API ID
+- `API_HASH` - Telegram API hash
+- `MONGODB_URI` - MongoDB connection string
+- `SUBSCRIPTION_GROUP_ID` - Telegram group ID for subscriptions
 
 ## 📖 Usage Guide
 

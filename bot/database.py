@@ -22,7 +22,7 @@ class SubscriptionDB:
             self.db = self.client[self.db_name]
             
             # Create indexes
-            await self.db["users"].create_index("_id", unique=True)
+            await self.db["users"].create_index("_id")  # _id is already unique by default
             await self.db["subscriptions"].create_index("user_id", unique=True)
             await self.db["plans"].create_index("days", unique=True)
             await self.db["vouchers"].create_index("code", unique=True)

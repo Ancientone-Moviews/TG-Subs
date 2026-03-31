@@ -31,13 +31,12 @@ set_client(app)
 
 # Global task reference
 scheduler_task = None
+shutdown_event = asyncio.Event()
 
 def signal_handler(signum, frame):
     """Handle shutdown signals"""
-    print(f"\n\n👋 Received signal {signum}. Shutting down...")
-    if scheduler_task:
-        scheduler_task.cancel()
-    sys.exit(0)
+    print(f"\n\n👋 Received signal {signum}. Shutting down gracefully...")
+    shutdown_event.set()
 
 # Register signal handlers
 signal.signal(signal.SIGINT, signal_handler)
@@ -85,48 +84,38 @@ async def initialize():
     print("=" * 50)
 
 async def main():
-    """Main bot function with retry mechanism"""
+    """Main bot function"""
     global scheduler_task
     
-    max_retries = 3
-    retry_delay = 5
-    
-    for attempt in range(max_retries):
-        try:
-            async with app:
-                await initialize()
-                
-                # Start scheduler task in background
-                print("\n📅 Starting background scheduler...")
-                scheduler_task = asyncio.create_task(handlers_scheduler.scheduler_task(app))
-                
-                print("\n🚀 Bot started! Listening for messages...\n")
-                
-                # Keep the bot running
+    try:
+        async with app:
+            await initialize()
+            
+            # Start scheduler task in background
+            print("\n📅 Starting background scheduler...")
+            scheduler_task = asyncio.create_task(handlers_scheduler.scheduler_task(app))
+            
+            print("\n🚀 Bot started! Listening for messages...\n")
+            
+            # Keep the bot running until shutdown signal
+            await shutdown_event.wait()
+            
+            print("\n\n👋 Bot stopped")
+            if scheduler_task:
+                scheduler_task.cancel()
                 try:
-                    await asyncio.Future()
+                    await scheduler_task
                 except asyncio.CancelledError:
-                    print("\n\n👋 Bot stopped")
-                    if scheduler_task:
-                        scheduler_task.cancel()
-                        try:
-                            await scheduler_task
-                        except asyncio.CancelledError:
-                            pass
-                    break
+                    pass
                     
-        except Exception as e:
-            if "msg_id is too low" in str(e) or "BadMsgNotification" in str(e):
-                if attempt < max_retries - 1:
-                    print(f"⚠️ Time sync error (attempt {attempt + 1}/{max_retries}). Retrying in {retry_delay} seconds...")
-                    await asyncio.sleep(retry_delay)
-                    continue
-                else:
-                    print("❌ Failed to connect after multiple attempts. Check system time.")
-                    raise
-            else:
-                # Other errors, don't retry
-                raise
+    except Exception as e:
+        if "msg_id is too low" in str(e) or "BadMsgNotification" in str(e):
+            print("❌ Time synchronization error. Please check system time.")
+            print("💡 Try: docker exec -it <container> chronyc -a makestep")
+            raise
+        else:
+            print(f"❌ Bot error: {e}")
+            raise
 
 if __name__ == "__main__":
     try:
