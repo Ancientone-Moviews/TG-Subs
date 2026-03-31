@@ -274,5 +274,5 @@ MIT License - Feel free to modify and distribute
 For issues and feature requests, create an issue on GitHub
 
 
-**Made by**: Ancient One ([@Moview_S](https://t.me/moview_s))
+**Made by**: **Ancient One** ([@Moview_S](https://t.me/moview_s))
 **Last Updated**: March 2026
