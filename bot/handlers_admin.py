@@ -8,6 +8,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from config import config, log_payment_approved, log_payment_rejected, log_subscription_renewed
 from database import SubscriptionDB
 from datetime import datetime, timedelta
+from tz_utils import tz_manager, ist_now, format_ist_time
 import secrets
 import string
 
@@ -332,7 +333,7 @@ async def approve_payment(client: Client, callback_query: CallbackQuery):
         
         # Notify user
         sub = await db.get_subscription(user_id)
-        expiry = sub.get("expiry_date").strftime("%Y-%m-%d %H:%M UTC")
+        expiry = format_ist_time(sub.get("expiry_date"))
         
         await client.send_message(
             user_id,
@@ -347,7 +348,7 @@ async def approve_payment(client: Client, callback_query: CallbackQuery):
         plan_info = f"{plan['days']} days - {config.CURRENCY}{plan['price']}" if plan else "Unknown"
         await log_payment_approved(user_id, "Screenshot", plan_info, callback_query.from_user.id)
         if plan:
-            expiry_str = sub.get("expiry_date").strftime("%Y-%m-%d %H:%M UTC")
+            expiry_str = format_ist_time(sub.get("expiry_date"))
             await log_subscription_renewed(user_id, plan["days"], expiry_str, "screenshot")
         
     except Exception as e:

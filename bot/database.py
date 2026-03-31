@@ -52,14 +52,14 @@ class SubscriptionDB:
                 "_id": user_id,
                 "first_name": first_name or f"User {user_id}",
                 "username": username,
-                "created_at": datetime.utcnow(),
-                "last_interaction": datetime.utcnow(),
+                "created_at": ist_now(),
+                "last_interaction": ist_now(),
             }
             await self.db["users"].insert_one(user)
         else:
             await self.db["users"].update_one(
                 {"_id": user_id},
-                {"$set": {"last_interaction": datetime.utcnow()}}
+                {"$set": {"last_interaction": ist_now()}}
             )
         
         return user
@@ -189,7 +189,7 @@ class SubscriptionDB:
         plan = {
             "days": days,
             "price": price,
-            "created_at": datetime.utcnow()
+            "created_at": ist_now()
         }
         result = await self.db["plans"].insert_one(plan)
         return str(result.inserted_id)
@@ -212,7 +212,7 @@ class SubscriptionDB:
             "is_active": True,
             "used_by": None,
             "used_at": None,
-            "created_at": datetime.utcnow()
+            "created_at": ist_now()
         }
         result = await self.db["vouchers"].insert_one(voucher)
         return str(result.inserted_id)
@@ -229,7 +229,7 @@ class SubscriptionDB:
                 "$set": {
                     "is_active": False,
                     "used_by": user_id,
-                    "used_at": datetime.utcnow()
+                    "used_at": ist_now()
                 }
             }
         )
@@ -255,7 +255,7 @@ class SubscriptionDB:
             "is_active": True,
             "used_by": None,
             "used_at": None,
-            "created_at": datetime.utcnow()
+            "created_at": ist_now()
         }
         result = await self.db["giftcards"].insert_one(giftcard)
         return str(result.inserted_id)
@@ -272,7 +272,7 @@ class SubscriptionDB:
                 "$set": {
                     "is_active": False,
                     "used_by": user_id,
-                    "used_at": datetime.utcnow()
+                    "used_at": ist_now()
                 }
             }
         )
@@ -298,7 +298,7 @@ class SubscriptionDB:
             "amount": amount,
             "method": method,  # "screenshot", "voucher", "giftcard"
             "status": "pending",  # pending, approved, rejected
-            "created_at": datetime.utcnow(),
+            "created_at": ist_now(),
             "screenshot_file_id": None,
         }
         result = await self.db["payments"].insert_one(payment)
@@ -312,13 +312,13 @@ class SubscriptionDB:
         """Approve payment"""
         result = await self.db["payments"].update_one(
             {"_id": ObjectId(payment_id)},
-            {"$set": {"status": "approved", "approved_at": datetime.utcnow()}}
+            {"$set": {"status": "approved", "approved_at": ist_now()}}
         )
         return result.modified_count > 0
     
     async def reject_payment(self, payment_id: str, reason: str = None) -> bool:
         """Reject payment"""
-        update_data = {"status": "rejected", "rejected_at": datetime.utcnow()}
+        update_data = {"status": "rejected", "rejected_at": ist_now()}
         if reason:
             update_data["rejection_reason"] = reason
             
@@ -356,7 +356,7 @@ class SubscriptionDB:
     
     async def get_expired_subscriptions(self) -> List[dict]:
         """Get all expired subscriptions that haven't been processed"""
-        now = datetime.utcnow()
+        now = ist_now()
         cursor = self.db["subscriptions"].find({
             "expiry_date": {"$lte": now},
             "status": "active",
@@ -368,12 +368,12 @@ class SubscriptionDB:
         """Mark subscription as processed (user removed from group)"""
         await self.db["subscriptions"].update_one(
             {"user_id": user_id},
-            {"$set": {"processed": True, "removed_at": datetime.utcnow()}}
+            {"$set": {"processed": True, "removed_at": ist_now()}}
         )
     
     async def get_processed_expired_users(self) -> List[dict]:
         """Get expired users for renewal notifications"""
-        now = datetime.utcnow()
+        now = ist_now()
         cursor = self.db["subscriptions"].find({
             "processed": True,
             "removed_at": {"$exists": True},
@@ -392,7 +392,7 @@ class SubscriptionDB:
         """Mark user as having invalid payment (for automatic removal)"""
         await self.db["users"].update_one(
             {"_id": user_id},
-            {"$set": {"invalid_payment": True, "marked_invalid_at": datetime.utcnow()}}
+            {"$set": {"invalid_payment": True, "marked_invalid_at": ist_now()}}
         )
     
     async def get_users_with_invalid_payment(self) -> List[dict]:
@@ -407,7 +407,7 @@ class SubscriptionDB:
         """Mark that user has been removed for invalid payment"""
         await self.db["users"].update_one(
             {"_id": user_id},
-            {"$set": {"removed_for_invalid": True, "removed_at": datetime.utcnow()}}
+            {"$set": {"removed_for_invalid": True, "removed_at": ist_now()}}
         )
     
     # ============ HELPER METHODS ============

@@ -88,7 +88,7 @@ async def handle_code_submission(client: Client, message: Message):
                 "voucher_code": code,
                 "days": days,
                 "status": "pending",
-                "created_at": datetime.utcnow(),
+                "created_at": ist_now(),
             })
             
             await message.reply_text(
@@ -125,7 +125,7 @@ async def handle_code_submission(client: Client, message: Message):
                 "method": "giftcard",
                 "giftcard_code": code,
                 "status": "pending",
-                "created_at": datetime.utcnow(),
+                "created_at": ist_now(),
             })
             
             await message.reply_text(
@@ -355,7 +355,7 @@ async def reject_giftcard(client: Client, callback_query: CallbackQuery):
         # Mark payment as rejected
         await db.db["payments"].update_one(
             {"user_id": user_id, "giftcard_code": code, "status": "pending"},
-            {"$set": {"status": "rejected", "rejected_at": datetime.utcnow()}}
+            {"$set": {"status": "rejected", "rejected_at": ist_now()}}
         )
         
         # Mark user for removal (invalid payment)
@@ -412,14 +412,14 @@ async def approve_voucher(client: Client, callback_query: CallbackQuery):
             # Mark payment as approved
             await db.db["payments"].update_one(
                 {"_id": payment["_id"]},
-                {"$set": {"status": "approved", "approved_at": datetime.utcnow()}}
+                {"$set": {"status": "approved", "approved_at": ist_now()}}
             )
             
             await callback_query.answer("✅ Voucher Approved!", show_alert=True)
             
             # Notify user
             sub = await db.get_subscription(user_id)
-            expiry = sub.get("expiry_date").strftime("%Y-%m-%d %H:%M UTC")
+            expiry = format_ist_time(sub.get("expiry_date"))
             
             await client.send_message(
                 user_id,
@@ -433,7 +433,7 @@ async def approve_voucher(client: Client, callback_query: CallbackQuery):
                 invite_link = await client.create_chat_invite_link(
                     chat_id=config.SUBSCRIPTION_GROUP_ID,
                     member_limit=1,
-                    expire_date=datetime.utcnow() + timedelta(hours=1)
+                    expire_date=ist_now() + timedelta(hours=1)
                 )
                 await client.send_message(
                     user_id,
@@ -468,7 +468,7 @@ async def reject_voucher(client: Client, callback_query: CallbackQuery):
         # Mark payment as rejected
         await db.db["payments"].update_one(
             {"user_id": user_id, "voucher_code": code, "status": "pending"},
-            {"$set": {"status": "rejected", "rejected_at": datetime.utcnow()}}
+            {"$set": {"status": "rejected", "rejected_at": ist_now()}}
         )
         
         await callback_query.answer("❌ Voucher Rejected!", show_alert=True)

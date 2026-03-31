@@ -2,8 +2,8 @@
 Configuration file for Telegram Subscription Bot
 """
 import os
-from datetime import datetime
 from dotenv import load_dotenv
+from tz_utils import format_ist_time
 from pyrogram import Client
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -128,7 +128,7 @@ async def log_payment_approved(user_id: int, payment_type: str, amount: str, adm
         f"<b>Type:</b> {payment_type}\n"
         f"<b>Amount:</b> {amount}\n"
         f"<b>Approved by:</b> <code>{admin_id}</code>\n"
-        f"<b>Time:</b> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}"
+        f"<b>Time:</b> {format_ist_time()}"
     )
     await log_to_channel(message)
 
@@ -141,7 +141,7 @@ async def log_payment_rejected(user_id: int, payment_type: str, reason: str, adm
         f"<b>Type:</b> {payment_type}\n"
         f"<b>Reason:</b> {reason}\n"
         f"<b>Rejected by:</b> <code>{admin_id}</code>\n"
-        f"<b>Time:</b> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}"
+        f"<b>Time:</b> {format_ist_time()}"
     )
     await log_to_channel(message)
 
@@ -154,7 +154,7 @@ async def log_subscription_renewed(user_id: int, days: int, expiry_date: str, me
         f"<b>Days Added:</b> {days}\n"
         f"<b>New Expiry:</b> {expiry_date}\n"
         f"<b>Method:</b> {method}\n"
-        f"<b>Time:</b> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}"
+        f"<b>Time:</b> {format_ist_time()}"
     )
     await log_to_channel(message)
 
@@ -165,7 +165,7 @@ async def log_user_removed(user_id: int, reason: str):
         f"🚫 <b>User Removed</b>\n\n"
         f"<b>User ID:</b> <code>{user_id}</code>\n"
         f"<b>Reason:</b> {reason}\n"
-        f"<b>Time:</b> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}"
+        f"<b>Time:</b> {format_ist_time()}"
     )
     await log_to_channel(message)
 

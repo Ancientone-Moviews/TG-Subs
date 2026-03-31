@@ -78,7 +78,7 @@ async def check_and_remove_expired(client: Client):
             for sub in expired_subs:
                 user_id = sub.get("user_id")
                 expiry = sub.get("expiry_date")
-                expiry_str = expiry.strftime("%Y-%m-%d %H:%M UTC")
+                expiry_str = format_ist_time(expiry)
                 
                 # Try to remove user from group
                 try:
