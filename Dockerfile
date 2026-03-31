@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     chrony \
     tzdata \
     ntpsec-ntpdate \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure chrony for IST timezone
@@ -29,7 +30,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy bot source code
+# Remove build tools to keep image slim
+RUN apt-get purge -y build-essential && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+# Copy environment file and bot source code
+COPY .env* ./
 COPY bot/ ./bot/
 
 # Set the start command
