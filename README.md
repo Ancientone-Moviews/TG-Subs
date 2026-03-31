@@ -78,6 +78,23 @@ cd bot
 python main.py
 ```
 
+### Step 5: Docker Deployment (Optional)
+For containerized deployment:
+
+```bash
+# Build the Docker image
+docker build -t tg-premium-bot .
+
+# Run the container
+docker run -d --name tg-bot \
+  -e BOT_TOKEN=your_bot_token \
+  -e API_ID=your_api_id \
+  -e API_HASH=your_api_hash \
+  tg-premium-bot
+```
+
+**Environment Variables**: Pass all `.env` variables as `-e` flags or use `--env-file .env`
+
 ## 📖 Usage Guide
 
 ### For Users

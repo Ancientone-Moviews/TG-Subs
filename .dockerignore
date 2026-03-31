@@ -1,0 +1,41 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Environment files (keep .env.example for reference)
+.env
+
+# Documentation
+*.md
+!README.md
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node modules (if any)
+node_modules
+
+# Build artifacts
+build/
+dist/
+
+# Temporary files
+*.tmp
+*.bak
