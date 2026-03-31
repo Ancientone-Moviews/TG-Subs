@@ -96,7 +96,7 @@ async def start_bot():
         print("❌ Configuration error:")
         for error in config_errors:
             print(f"   - {error}")
-        print("   - Create /app/.env in the container or pass BOT_TOKEN, API_ID, and API_HASH as environment variables")
+        print("   - Fill /app/sample_config.env or /app/.env with real BOT_TOKEN, API_ID, and API_HASH, or pass them as environment variables")
         raise RuntimeError("Invalid runtime configuration")
 
     app = build_app()
