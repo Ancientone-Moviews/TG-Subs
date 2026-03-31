@@ -36,7 +36,7 @@ RUN apt-get purge -y build-essential && apt-get autoremove -y && rm -rf /var/lib
 
 # Copy environment files and bot source code
 COPY .env* ./
-COPY sample_config.env ./
+COPY *.env ./
 COPY bot/ ./bot/
 
 # Set the start command

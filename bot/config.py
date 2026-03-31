@@ -9,6 +9,7 @@ from pyrogram import Client
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 CONFIG_CANDIDATES = [
     os.path.join(BASE_DIR, '.env'),
+    os.path.join(BASE_DIR, 'config.env'),
     os.path.join(BASE_DIR, 'sample_config.env'),
 ]
 
@@ -84,7 +85,7 @@ def validate_config():
         os.getenv(key) for key in ("BOT_TOKEN", "API_ID", "API_HASH")
     ):
         errors.append(
-            "Missing config file. Expected .env or sample_config.env in the project root, "
+            "Missing config file. Expected .env, config.env, or sample_config.env in the project root, "
             "or BOT_TOKEN/API_ID/API_HASH in the environment"
         )
 
