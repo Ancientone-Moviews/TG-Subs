@@ -4,7 +4,7 @@ Premium channel access management with anonymous mode and privacy protection
 """
 
 import asyncio
-from pyrogram import Client
+from pyrogram import Client, errors
 from config import config, set_client
 from database import SubscriptionDB
 import handlers_subscription
@@ -83,44 +83,60 @@ async def initialize():
     print("✅ Bot is ready!")
     print("=" * 50)
 
+async def start_bot():
+    """Main bot function logic in context manager"""
+    global scheduler_task
+
+    async with app:
+        await initialize()
+
+        # Start scheduler task in background
+        print("\n📅 Starting background scheduler...")
+        scheduler_task = asyncio.create_task(handlers_scheduler.scheduler_task(app))
+
+        print("\n🚀 Bot started! Listening for messages...\n")
+
+        # Keep the bot running until shutdown signal
+        await shutdown_event.wait()
+
+        print("\n\n👋 Shutting down bot...")
+
+        # Cancel scheduler task
+        if scheduler_task and not scheduler_task.done():
+            scheduler_task.cancel()
+            try:
+                await scheduler_task
+            except asyncio.CancelledError:
+                pass
+
+        # Stop the app gracefully
+        await app.stop()
+
+        print("✅ Bot shutdown complete")
+
+
 async def main():
     """Main bot function"""
-    global scheduler_task
-    
-    try:
-        async with app:
-            await initialize()
-            
-            # Start scheduler task in background
-            print("\n📅 Starting background scheduler...")
-            scheduler_task = asyncio.create_task(handlers_scheduler.scheduler_task(app))
-            
-            print("\n🚀 Bot started! Listening for messages...\n")
-            
-            # Keep the bot running until shutdown signal
-            await shutdown_event.wait()
-            
-            print("\n\n👋 Shutting down bot...")
-            
-            # Cancel scheduler task
-            if scheduler_task and not scheduler_task.done():
-                scheduler_task.cancel()
-                try:
-                    await scheduler_task
-                except asyncio.CancelledError:
-                    pass
-            
-            # Stop the app gracefully
-            await app.stop()
-            
-            print("✅ Bot shutdown complete")
-            
-    except Exception as e:
-        if "msg_id is too low" in str(e) or "BadMsgNotification" in str(e):
-            print("⚠️ Time synchronization error detected, but continuing with local IST date arithmetic for subscription expiry.")
-            print("💡 Ensure system time is synced (chrony / chronyc -a makestep), but subscription calculation will use IST now.")
+    max_retries = 5
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            await start_bot()
             return
-        else:
+        except errors.BadMsgNotification as e:
+            print(f"⚠️ BadMsgNotification on attempt {attempt}/{max_retries}: {e}")
+            if attempt < max_retries:
+                print("⏳ Waiting 5 seconds before retrying...")
+                await asyncio.sleep(5)
+                continue
+            else:
+                print("❌ Max retries reached for BadMsgNotification. Exiting.")
+                raise
+        except Exception as e:
+            if "msg_id is too low" in str(e):
+                print("⚠️ Time synchronization error detected, but continuing with local IST date arithmetic for subscription expiry.")
+                print("💡 Ensure system time is synced (chrony / chronyc -a makestep), but subscription calculation will use IST now.")
+                return
             print(f"❌ Bot error: {e}")
             raise
 
