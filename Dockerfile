@@ -8,6 +8,12 @@ RUN apt-get update && apt-get install -y \
     ntpdate \
     && rm -rf /var/lib/apt/lists/*
 
+# Configure chrony for IST timezone
+RUN echo "server time.nist.gov iburst" >> /etc/chrony/chrony.conf && \
+    echo "server pool.ntp.org iburst" >> /etc/chrony/chrony.conf && \
+    echo "server asia.pool.ntp.org iburst" >> /etc/chrony/chrony.conf && \
+    echo "allow all" >> /etc/chrony/chrony.conf
+
 # Set timezone to IST (Indian Standard Time)
 ENV TZ=Asia/Kolkata
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

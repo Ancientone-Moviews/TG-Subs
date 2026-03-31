@@ -21,8 +21,7 @@ class SubscriptionDB:
             self.client = motor.motor_asyncio.AsyncIOMotorClient(self.uri)
             self.db = self.client[self.db_name]
             
-            # Create indexes
-            await self.db["users"].create_index("_id")  # _id is already unique by default
+            # Create indexes (don't create index on _id as it's automatically indexed and unique)
             await self.db["subscriptions"].create_index("user_id", unique=True)
             await self.db["plans"].create_index("days", unique=True)
             await self.db["vouchers"].create_index("code", unique=True)

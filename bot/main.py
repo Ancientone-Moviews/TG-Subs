@@ -100,14 +100,21 @@ async def main():
             # Keep the bot running until shutdown signal
             await shutdown_event.wait()
             
-            print("\n\n👋 Bot stopped")
-            if scheduler_task:
+            print("\n\n👋 Shutting down bot...")
+            
+            # Cancel scheduler task
+            if scheduler_task and not scheduler_task.done():
                 scheduler_task.cancel()
                 try:
                     await scheduler_task
                 except asyncio.CancelledError:
                     pass
-                    
+            
+            # Stop the app gracefully
+            await app.stop()
+            
+            print("✅ Bot shutdown complete")
+            
     except Exception as e:
         if "msg_id is too low" in str(e) or "BadMsgNotification" in str(e):
             print("❌ Time synchronization error. Please check system time.")
