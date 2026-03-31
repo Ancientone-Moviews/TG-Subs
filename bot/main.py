@@ -5,7 +5,7 @@ Premium channel access management with anonymous mode and privacy protection
 
 import asyncio
 from pyrogram import Client
-from config import config
+from config import config, set_client
 from database import SubscriptionDB
 import handlers_subscription
 import handlers_payment
@@ -26,7 +26,7 @@ app = Client(
 )
 
 # Set client for logging
-config.set_client(app)
+set_client(app)
 
 # Global task reference
 scheduler_task = None
