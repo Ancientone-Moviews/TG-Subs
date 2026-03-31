@@ -17,9 +17,10 @@ import signal
 # Initialize database
 db = SubscriptionDB(config.MONGODB_URI, config.DB_NAME)
 
-# Global task reference
+# Global runtime state
 scheduler_task = None
-shutdown_event = asyncio.Event()
+shutdown_event = None
+running_loop = None
 app = None
 
 
@@ -35,9 +36,16 @@ def build_app():
 
 
 def signal_handler(signum, frame):
-    """Handle shutdown signals"""
+    """Handle shutdown signals."""
     print(f"\n\n👋 Received signal {signum}. Shutting down gracefully...")
-    shutdown_event.set()
+
+    if shutdown_event is None:
+        return
+
+    if running_loop and not running_loop.is_closed():
+        running_loop.call_soon_threadsafe(shutdown_event.set)
+    else:
+        shutdown_event.set()
 
 
 # Register signal handlers
@@ -46,9 +54,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 
 async def initialize():
-    """Initialize bot and database"""
-    global scheduler_task
-
+    """Initialize bot and database."""
     print("=" * 50)
     print("🤖 Telegram Subscription Bot Initializing...")
     print("=" * 50)
@@ -88,8 +94,8 @@ async def initialize():
 
 
 async def start_bot():
-    """Main bot function logic in context manager"""
-    global scheduler_task, app
+    """Main bot function logic in context manager."""
+    global scheduler_task, shutdown_event, running_loop, app
 
     config_errors = validate_config()
     if config_errors:
@@ -98,6 +104,10 @@ async def start_bot():
             print(f"   - {error}")
         print("   - Fill /app/config.env, /app/.env, or /app/sample_config.env with real BOT_TOKEN, API_ID, and API_HASH, or pass them as environment variables")
         raise RuntimeError("Invalid runtime configuration")
+
+    running_loop = asyncio.get_running_loop()
+    shutdown_event = asyncio.Event()
+    scheduler_task = None
 
     app = build_app()
     set_client(app)
@@ -124,14 +134,14 @@ async def start_bot():
             except asyncio.CancelledError:
                 pass
 
-        # Stop the app gracefully
-        await app.stop()
-
-        print("✅ Bot shutdown complete")
+    scheduler_task = None
+    shutdown_event = None
+    running_loop = None
+    print("✅ Bot shutdown complete")
 
 
 async def main():
-    """Main bot function"""
+    """Main bot function."""
     max_retries = 5
 
     for attempt in range(1, max_retries + 1):
@@ -144,9 +154,8 @@ async def main():
                 print("⏳ Waiting 5 seconds before retrying...")
                 await asyncio.sleep(5)
                 continue
-            else:
-                print("❌ Max retries reached for BadMsgNotification. Exiting.")
-                raise
+            print("❌ Max retries reached for BadMsgNotification. Exiting.")
+            raise
         except Exception as e:
             if "msg_id is too low" in str(e):
                 print("⚠️ Time synchronization error detected, but continuing with local IST date arithmetic for subscription expiry.")
