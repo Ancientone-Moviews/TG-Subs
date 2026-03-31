@@ -7,10 +7,8 @@ from pyrogram import Client
 from config import config, log_user_removed
 from database import SubscriptionDB
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from tz_utils import tz_manager, ist_now, format_ist_time
 import asyncio
-
-IST = ZoneInfo("Asia/Kolkata")
 
 db = None  # Will be initialized in main.py
 
@@ -34,10 +32,10 @@ async def check_and_remind_expiring(client: Client):
         for sub in expiring_subs:
             user_id = sub.get("user_id")
             expiry = sub.get("expiry_date")
-            days_left = (expiry - datetime.now(IST)).days
-            hours_left = ((expiry - datetime.now(IST)).total_seconds()) / 3600
+            days_left = (expiry - ist_now()).days
+            hours_left = ((expiry - ist_now()).total_seconds()) / 3600
             
-            expiry_str = expiry.astimezone(IST).strftime("%Y-%m-%d %H:%M IST")
+            expiry_str = expiry.astimezone(tz_manager.get_timezone("IST")).strftime("%Y-%m-%d %H:%M IST")
             
             # Create reminder message
             if days_left > 0:
@@ -215,7 +213,7 @@ async def scheduler_task(client: Client):
     
     while True:
         try:
-            print(f"\n📅 Running scheduled checks at {datetime.now(IST).strftime('%Y-%m-%d %H:%M:%S IST')}")
+            print(f"\n📅 Running scheduled checks at {format_ist_time()}")
             
             # Check for subscriptions expiring soon (24 hours)
             await check_and_remind_expiring(client)

@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure chrony for IST timezone
-RUN echo "server time.nist.gov iburst" >> /etc/chrony/chrony.conf && \
+# Configure chrony for IST timezone (prioritize Windows time server)
+RUN echo "server time.windows.com iburst prefer" >> /etc/chrony/chrony.conf && \
+    echo "server time.nist.gov iburst" >> /etc/chrony/chrony.conf && \
     echo "server pool.ntp.org iburst" >> /etc/chrony/chrony.conf && \
     echo "server asia.pool.ntp.org iburst" >> /etc/chrony/chrony.conf && \
     echo "allow all" >> /etc/chrony/chrony.conf

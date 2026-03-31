@@ -9,10 +9,8 @@ from pyrogram.errors import RPCError
 from config import config
 from database import SubscriptionDB
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from tz_utils import tz_manager, ist_now, format_ist_time
 import asyncio
-
-IST = ZoneInfo("Asia/Kolkata")
 
 db = None  # Will be initialized in main.py
 
@@ -38,7 +36,7 @@ async def start_command(client: Client, message: Message):
         if is_subscribed:
             # User already has subscription
             sub = await db.get_subscription(user_id)
-            expiry = sub.get("expiry_date").astimezone(IST).strftime("%Y-%m-%d %H:%M IST")
+            expiry = sub.get("expiry_date").astimezone(tz_manager.get_timezone("IST")).strftime("%Y-%m-%d %H:%M IST")
             
             await message.reply_text(
                 f"🎉 <b>Welcome back to {config.SUBSCRIPTION_GROUP_NAME}!</b>\n\n"
@@ -115,9 +113,9 @@ async def select_plan(client: Client, callback_query: CallbackQuery):
         await db.get_or_create_user(user_id, callback_query.from_user.first_name, callback_query.from_user.username)
         
         # Calculate expiry in IST
-        now = datetime.now(IST)
+        now = ist_now()
         expiry = now + timedelta(days=plan["days"])
-        expiry_str = expiry.strftime("%Y-%m-%d %H:%M IST")
+        expiry_str = format_ist_time(expiry)
         
         text = (
             f"<b>✅ Plan Selected: {plan['days']} Days</b>\n\n"
@@ -214,10 +212,10 @@ async def show_sub_info(client: Client, callback_query: CallbackQuery):
         if not sub:
             return await callback_query.answer("No subscription found", show_alert=True)
         
-        expiry = sub.get("expiry_date").astimezone(IST).strftime("%Y-%m-%d %H:%M IST")
+        expiry = sub.get("expiry_date").astimezone(tz_manager.get_timezone("IST")).strftime("%Y-%m-%d %H:%M IST")
         days = sub.get("days")
         
-        days_left = (sub.get("expiry_date") - datetime.now(IST)).days
+        days_left = (sub.get("expiry_date") - ist_now()).days
         
         text = (
             f"<b>📋 Your Subscription Info</b>\n\n"

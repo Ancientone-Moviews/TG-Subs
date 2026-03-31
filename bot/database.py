@@ -3,17 +3,11 @@ MongoDB Database Handler for Subscription Bot
 """
 import motor.motor_asyncio
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 from typing import Optional, List, Dict, Any
 from bson import ObjectId
 import secrets
 import string
-
-# IST timezone helper
-IST = ZoneInfo("Asia/Kolkata")
-
-def ist_now() -> datetime:
-    return datetime.now(IST)
+from tz_utils import tz_manager, ist_now
 
 class SubscriptionDB:
     def __init__(self, uri: str, db_name: str = "tg_subs"):

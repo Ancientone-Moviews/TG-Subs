@@ -8,11 +8,9 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from config import config, log_payment_approved, log_payment_rejected, log_subscription_renewed
 from database import SubscriptionDB
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from tz_utils import tz_manager, ist_now, format_ist_time
 import asyncio
 import re
-
-IST = ZoneInfo("Asia/Kolkata")
 
 db = None  # Will be initialized in main.py
 
@@ -298,7 +296,7 @@ async def approve_giftcard(client: Client, callback_query: CallbackQuery):
             await db.extend_subscription(user_id, days)
             
             # Mark payment as approved
-            now = datetime.now(IST)
+            now = ist_now()
             await db.db["payments"].update_one(
                 {"_id": payment["_id"]},
                 {"$set": {"status": "approved", "approved_at": now}}
@@ -308,7 +306,7 @@ async def approve_giftcard(client: Client, callback_query: CallbackQuery):
             
             # Notify user
             sub = await db.get_subscription(user_id)
-            expiry = sub.get("expiry_date").astimezone(IST).strftime("%Y-%m-%d %H:%M IST")
+            expiry = sub.get("expiry_date").astimezone(tz_manager.get_timezone("IST")).strftime("%Y-%m-%d %H:%M IST")
             
             await client.send_message(
                 user_id,

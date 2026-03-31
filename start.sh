@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Sync system time with IST (Indian NTP servers)
-echo "Syncing system time with Indian NTP servers..."
+echo "Syncing system time with Windows NTP servers..."
 
 # Start chrony service
 echo "Starting chrony time synchronization service..."
 chronyd -d &
 sleep 2
 
-# Try multiple NTP servers with retries
-NTP_SERVERS=("time.nist.gov" "pool.ntp.org" "asia.pool.ntp.org")
+# Try multiple NTP servers with retries (prioritize Windows time server)
+NTP_SERVERS=("time.windows.com" "time.nist.gov" "pool.ntp.org" "asia.pool.ntp.org")
 
 SYNC_SUCCESS=false
 for server in "${NTP_SERVERS[@]}"; do
