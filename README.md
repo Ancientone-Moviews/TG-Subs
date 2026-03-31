@@ -95,6 +95,22 @@ docker run -d --name tg-bot \
 
 **Environment Variables**: Pass all `.env` variables as `-e` flags or use `--env-file .env`
 
+### Docker Troubleshooting
+
+**Time Synchronization Error:**
+If you get `msg_id is too low` error, the container's system time is out of sync. The Dockerfile includes automatic time sync, but you can also run:
+
+```bash
+# Manual time sync in running container
+docker exec -it tg-bot ntpdate -u pool.ntp.org
+
+# Or rebuild with fresh time sync
+docker build --no-cache -t tg-premium-bot .
+```
+
+**Environment File:**
+Create a `.env` file in the project root with your bot credentials before building.
+
 ## 📖 Usage Guide
 
 ### For Users
