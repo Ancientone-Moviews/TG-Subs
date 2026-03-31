@@ -8,8 +8,11 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from config import config, log_payment_approved, log_payment_rejected, log_subscription_renewed
 from database import SubscriptionDB
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import asyncio
 import re
+
+IST = ZoneInfo("Asia/Kolkata")
 
 db = None  # Will be initialized in main.py
 
@@ -295,16 +298,17 @@ async def approve_giftcard(client: Client, callback_query: CallbackQuery):
             await db.extend_subscription(user_id, days)
             
             # Mark payment as approved
+            now = datetime.now(IST)
             await db.db["payments"].update_one(
                 {"_id": payment["_id"]},
-                {"$set": {"status": "approved", "approved_at": datetime.utcnow()}}
+                {"$set": {"status": "approved", "approved_at": now}}
             )
             
             await callback_query.answer("✅ Gift Card Approved!", show_alert=True)
             
             # Notify user
             sub = await db.get_subscription(user_id)
-            expiry = sub.get("expiry_date").strftime("%Y-%m-%d %H:%M UTC")
+            expiry = sub.get("expiry_date").astimezone(IST).strftime("%Y-%m-%d %H:%M IST")
             
             await client.send_message(
                 user_id,
@@ -318,7 +322,7 @@ async def approve_giftcard(client: Client, callback_query: CallbackQuery):
                 invite_link = await client.create_chat_invite_link(
                     chat_id=config.SUBSCRIPTION_GROUP_ID,
                     member_limit=1,
-                    expire_date=datetime.utcnow() + timedelta(hours=1)
+                    expire_date=now + timedelta(hours=1)
                 )
                 await client.send_message(
                     user_id,

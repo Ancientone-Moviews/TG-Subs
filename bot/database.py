@@ -3,10 +3,17 @@ MongoDB Database Handler for Subscription Bot
 """
 import motor.motor_asyncio
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from typing import Optional, List, Dict, Any
 from bson import ObjectId
 import secrets
 import string
+
+# IST timezone helper
+IST = ZoneInfo("Asia/Kolkata")
+
+def ist_now() -> datetime:
+    return datetime.now(IST)
 
 class SubscriptionDB:
     def __init__(self, uri: str, db_name: str = "tg_subs"):
@@ -80,7 +87,7 @@ class SubscriptionDB:
     
     async def create_subscription(self, user_id: int, days: int, plan_id: str = None) -> dict:
         """Create or update subscription"""
-        now = datetime.utcnow()
+        now = ist_now()
         expiry = now + timedelta(days=days)
         
         subscription = {
@@ -107,7 +114,7 @@ class SubscriptionDB:
         if not sub:
             return await self.create_subscription(user_id, days)
         
-        now = datetime.utcnow()
+        now = ist_now()
         current_expiry = sub.get("expiry_date")
         
         if current_expiry and current_expiry > now:
@@ -141,14 +148,15 @@ class SubscriptionDB:
             return False
         
         expiry = sub.get("expiry_date")
-        if expiry and expiry > datetime.utcnow():
+        now = ist_now()
+        if expiry and expiry > now:
             return True
         
         return False
     
     async def get_active_subscriptions(self) -> List[dict]:
         """Get all active subscriptions"""
-        now = datetime.utcnow()
+        now = ist_now()
         cursor = self.db["subscriptions"].find({
             "expiry_date": {"$gt": now},
             "status": "active"
@@ -157,7 +165,7 @@ class SubscriptionDB:
     
     async def get_expiring_subscriptions(self, hours: int = 24) -> List[dict]:
         """Get subscriptions expiring soon"""
-        now = datetime.utcnow()
+        now = ist_now()
         target_time = now + timedelta(hours=hours)
         
         cursor = self.db["subscriptions"].find({
