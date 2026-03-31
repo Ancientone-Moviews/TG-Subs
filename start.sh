@@ -15,7 +15,7 @@ SYNC_SUCCESS=false
 for server in "${NTP_SERVERS[@]}"; do
     echo "Trying NTP server: $server"
     for attempt in {1..3}; do
-        if ntpdate -u "$server" 2>/dev/null; then
+        if ntpsec-ntpdate -u "$server" 2>/dev/null; then
             echo "✅ Time sync successful with $server (attempt $attempt)"
             SYNC_SUCCESS=true
             break 2

@@ -5,7 +5,7 @@ FROM python:3.9-slim
 RUN apt-get update && apt-get install -y \
     chrony \
     tzdata \
-    ntpdate \
+    ntpsec-ntpdate \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure chrony for IST timezone
