@@ -78,6 +78,12 @@ cd bot
 python main.py
 ```
 
+### Render Deployment
+For Render.com deployment:
+- **Start Command**: `python bot/main.py`
+- **Build Command**: `pip install -r requirements.txt`
+- Set all environment variables in Render dashboard
+
 ### Step 5: Docker Deployment (Optional)
 For containerized deployment:
 

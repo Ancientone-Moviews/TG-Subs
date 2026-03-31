@@ -12,6 +12,7 @@ import handlers_payment
 import handlers_admin
 import handlers_scheduler
 import sys
+import signal
 
 # Initialize database
 db = SubscriptionDB(config.MONGODB_URI, config.DB_NAME)
@@ -30,6 +31,17 @@ set_client(app)
 
 # Global task reference
 scheduler_task = None
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals"""
+    print(f"\n\n👋 Received signal {signum}. Shutting down...")
+    if scheduler_task:
+        scheduler_task.cancel()
+    sys.exit(0)
+
+# Register signal handlers
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 async def initialize():
     """Initialize bot and database"""
@@ -90,10 +102,11 @@ async def main():
                 
                 print("\n🚀 Bot started! Listening for messages...\n")
                 
+                # Keep the bot running
                 try:
-                    await app.run()
-                except KeyboardInterrupt:
-                    print("\n\n👋 Bot stopped by user")
+                    await asyncio.Future()
+                except asyncio.CancelledError:
+                    print("\n\n👋 Bot stopped")
                     if scheduler_task:
                         scheduler_task.cancel()
                         try:
@@ -114,8 +127,6 @@ async def main():
             else:
                 # Other errors, don't retry
                 raise
-                except asyncio.CancelledError:
-                    pass
 
 if __name__ == "__main__":
     try:
