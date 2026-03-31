@@ -2,16 +2,31 @@
 Configuration file for Telegram Subscription Bot
 """
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from pyrogram import Client
-from datetime import datetime
 
-# Load .env from parent directory
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+CONFIG_CANDIDATES = [
+    os.path.join(BASE_DIR, '.env'),
+    os.path.join(BASE_DIR, 'sample_config.env'),
+]
+
+loaded_config_path = None
+for config_path in CONFIG_CANDIDATES:
+    if os.path.exists(config_path):
+        load_dotenv(config_path, override=False)
+        loaded_config_path = config_path
+        break
+
+if loaded_config_path:
+    print(f"Loaded configuration from: {loaded_config_path}")
 else:
-    print("Warning: .env file not found. Using default values.")
+    print(
+        "Warning: No config file found. Expected one of: "
+        + ", ".join(CONFIG_CANDIDATES)
+        + ". Using environment variables/default values."
+    )
 
 
 class Config:
@@ -65,8 +80,13 @@ def validate_config():
     """Validate required runtime configuration before bot startup."""
     errors = []
 
-    if not os.path.exists(dotenv_path):
-        errors.append(f"Missing .env file at: {os.path.abspath(dotenv_path)}")
+    if loaded_config_path is None and not any(
+        os.getenv(key) for key in ("BOT_TOKEN", "API_ID", "API_HASH")
+    ):
+        errors.append(
+            "Missing config file. Expected .env or sample_config.env in the project root, "
+            "or BOT_TOKEN/API_ID/API_HASH in the environment"
+        )
 
     if not Config.BOT_TOKEN or Config.BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
         errors.append("BOT_TOKEN is missing or still set to the sample placeholder")

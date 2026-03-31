@@ -34,8 +34,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Remove build tools to keep image slim
 RUN apt-get purge -y build-essential && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
-# Copy environment file and bot source code
+# Copy environment files and bot source code
 COPY .env* ./
+COPY sample_config.env ./
 COPY bot/ ./bot/
 
 # Set the start command
