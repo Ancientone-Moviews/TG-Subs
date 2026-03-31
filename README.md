@@ -97,16 +97,24 @@ docker run -d --name tg-bot \
 
 ### Docker Troubleshooting
 
-**Time Synchronization Error:**
-If you get `msg_id is too low` error, the container's system time is out of sync. The Dockerfile includes automatic time sync, but you can also run:
+**Time Synchronization Error (`msg_id is too low`):**
+This is a common Pyrogram issue in containers. The bot includes automatic retry logic, but you can also:
 
 ```bash
 # Manual time sync in running container
-docker exec -it tg-bot ntpdate -u pool.ntp.org
+docker exec -it tg-bot chronyc -a makestep
 
-# Or rebuild with fresh time sync
+# Or check container time
+docker exec -it tg-bot date
+
+# Rebuild with fresh time sync
 docker build --no-cache -t tg-premium-bot .
 ```
+
+**Connection Issues:**
+- Ensure all environment variables are set correctly
+- Check bot token and API credentials
+- Verify network connectivity
 
 **Environment File:**
 Create a `.env` file in the project root with your bot credentials before building.

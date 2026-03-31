@@ -73,26 +73,47 @@ async def initialize():
     print("=" * 50)
 
 async def main():
-    """Main bot function"""
+    """Main bot function with retry mechanism"""
     global scheduler_task
     
-    async with app:
-        await initialize()
-        
-        # Start scheduler task in background
-        print("\n📅 Starting background scheduler...")
-        scheduler_task = asyncio.create_task(handlers_scheduler.scheduler_task(app))
-        
-        print("\n🚀 Bot started! Listening for messages...\n")
-        
+    max_retries = 3
+    retry_delay = 5
+    
+    for attempt in range(max_retries):
         try:
-            await app.run()
-        except KeyboardInterrupt:
-            print("\n\n👋 Bot stopped by user")
-            if scheduler_task:
-                scheduler_task.cancel()
+            async with app:
+                await initialize()
+                
+                # Start scheduler task in background
+                print("\n📅 Starting background scheduler...")
+                scheduler_task = asyncio.create_task(handlers_scheduler.scheduler_task(app))
+                
+                print("\n🚀 Bot started! Listening for messages...\n")
+                
                 try:
-                    await scheduler_task
+                    await app.run()
+                except KeyboardInterrupt:
+                    print("\n\n👋 Bot stopped by user")
+                    if scheduler_task:
+                        scheduler_task.cancel()
+                        try:
+                            await scheduler_task
+                        except asyncio.CancelledError:
+                            pass
+                    break
+                    
+        except Exception as e:
+            if "msg_id is too low" in str(e) or "BadMsgNotification" in str(e):
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Time sync error (attempt {attempt + 1}/{max_retries}). Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                    continue
+                else:
+                    print("❌ Failed to connect after multiple attempts. Check system time.")
+                    raise
+            else:
+                # Other errors, don't retry
+                raise
                 except asyncio.CancelledError:
                     pass
 

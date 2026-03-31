@@ -3,15 +3,16 @@ FROM python:3.9-slim
 
 # Install system dependencies for time sync
 RUN apt-get update && apt-get install -y \
-    ntpdate \
+    chrony \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-# Set timezone (optional, adjust as needed)
+# Set timezone
 ENV TZ=UTC
 
-# Sync system time
-RUN ntpdate -u pool.ntp.org || true
+# Copy startup script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
 # Set working directory
 WORKDIR /app
@@ -24,4 +25,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY bot/ ./bot/
 
 # Set the start command
-CMD ["python", "bot/main.py"]
+CMD ["/start.sh"]
