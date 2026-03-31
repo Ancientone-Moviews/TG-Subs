@@ -273,11 +273,6 @@ MIT License - Feel free to modify and distribute
 
 For issues and feature requests, create an issue on GitHub
 
-## 🙏 Credits
-
-Built with ❤️ for Stremio addon distribution
-
----
 
 **Made by**: Your Name  
 **Last Updated**: March 2026
