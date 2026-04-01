@@ -91,7 +91,7 @@ async def initialize():
     try:
         bot_me = await app.get_me()
     except Exception as e:
-        print(f"❌ Failed to fetch bot details: {e}")
+        print(f"❌ Failed to fetch bot identity; startup cannot verify configuration: {e}")
         sys.exit(1)
 
     bot_username = f"@{bot_me.username}" if bot_me.username else "N/A"
@@ -105,9 +105,9 @@ async def initialize():
         ("API_HASH", mask_secret(config.API_HASH)),
         ("OWNER_ID", mask_secret(config.OWNER_ID, visible_prefix=0, visible_suffix=4)),
         ("ADMIN_IDS", admin_ids_display),
-        ("SUBSCRIPTION_GROUP_ID", config.SUBSCRIPTION_GROUP_ID),
+        ("SUBSCRIPTION_GROUP_ID", mask_secret(config.SUBSCRIPTION_GROUP_ID, visible_prefix=0, visible_suffix=4)),
         ("SUBSCRIPTION_GROUP_NAME", config.SUBSCRIPTION_GROUP_NAME),
-        ("LOGS_CHANNEL_ID", config.LOGS_CHANNEL_ID),
+        ("LOGS_CHANNEL_ID", mask_secret(config.LOGS_CHANNEL_ID, visible_prefix=0, visible_suffix=4)),
         ("MONGODB_URI", mask_secret(config.MONGODB_URI)),
         ("DB_NAME", config.DB_NAME),
         ("CURRENCY", config.CURRENCY),
