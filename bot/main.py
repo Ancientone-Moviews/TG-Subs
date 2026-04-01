@@ -28,10 +28,8 @@ def mask_secret(value, visible_prefix=6, visible_suffix=4):
     if value is None:
         return None
     text = str(value)
-    if len(text) <= 4:
-        return "****"
     if len(text) <= visible_prefix + visible_suffix:
-        return f"{text[:2]}...{text[-2:]}"
+        return "****"
     return f"{text[:visible_prefix]}...{text[-visible_suffix:]}"
 
 
@@ -97,12 +95,15 @@ async def initialize():
         sys.exit(1)
 
     bot_username = f"@{bot_me.username}" if bot_me.username else "N/A"
-    admin_ids_display = ", ".join(str(admin_id) for admin_id in config.ADMIN_IDS)
+    admin_ids = config.ADMIN_IDS or []
+    admin_ids_display = ", ".join(
+        mask_secret(admin_id, visible_prefix=0, visible_suffix=4) for admin_id in admin_ids
+    ) or "None"
     config_values = [
         ("BOT_TOKEN", mask_secret(config.BOT_TOKEN)),
-        ("API_ID", mask_secret(config.API_ID)),
+        ("API_ID", mask_secret(config.API_ID, visible_prefix=0, visible_suffix=4)),
         ("API_HASH", mask_secret(config.API_HASH)),
-        ("OWNER_ID", config.OWNER_ID),
+        ("OWNER_ID", mask_secret(config.OWNER_ID, visible_prefix=0, visible_suffix=4)),
         ("ADMIN_IDS", admin_ids_display),
         ("SUBSCRIPTION_GROUP_ID", config.SUBSCRIPTION_GROUP_ID),
         ("SUBSCRIPTION_GROUP_NAME", config.SUBSCRIPTION_GROUP_NAME),
