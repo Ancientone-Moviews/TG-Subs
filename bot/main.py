@@ -24,18 +24,6 @@ running_loop = None
 app = None
 
 
-def mask_secret(value, visible_prefix=6, visible_suffix=4):
-    if value is None:
-        return None
-    text = str(value)
-    if len(text) <= visible_prefix + visible_suffix:
-        return "****"
-    return f"{text[:visible_prefix]}...{text[-visible_suffix:]}"
-
-
-ID_MASK = {"visible_prefix": 0, "visible_suffix": 4}
-
-
 def build_app():
     """Create the Telegram client after config validation."""
     return Client(
@@ -103,20 +91,18 @@ async def initialize():
     bot_username = bot_me.username or "N/A"
     admin_ids = config.ADMIN_IDS or []
     if admin_ids:
-        admin_ids_display = ", ".join(
-            mask_secret(admin_id, **ID_MASK) for admin_id in admin_ids
-        )
+        admin_ids_display = f"{len(admin_ids)} admin(s)"
     else:
         admin_ids_display = "None"
     config_values = [
         ("BOT_TOKEN", "[REDACTED]"),
-        ("API_ID", mask_secret(config.API_ID, **ID_MASK)),
+        ("API_ID", "[REDACTED]"),
         ("API_HASH", "[REDACTED]"),
-        ("OWNER_ID", mask_secret(config.OWNER_ID, **ID_MASK)),
+        ("OWNER_ID", "[REDACTED]"),
         ("ADMIN_IDS", admin_ids_display),
-        ("SUBSCRIPTION_GROUP_ID", mask_secret(config.SUBSCRIPTION_GROUP_ID, **ID_MASK)),
+        ("SUBSCRIPTION_GROUP_ID", "[REDACTED]"),
         ("SUBSCRIPTION_GROUP_NAME", config.SUBSCRIPTION_GROUP_NAME),
-        ("LOGS_CHANNEL_ID", mask_secret(config.LOGS_CHANNEL_ID, **ID_MASK)),
+        ("LOGS_CHANNEL_ID", "[REDACTED]" if config.LOGS_CHANNEL_ID else "None"),
         ("MONGODB_URI", "[REDACTED]"),
         ("DB_NAME", config.DB_NAME),
         ("CURRENCY", config.CURRENCY),
