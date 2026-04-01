@@ -94,7 +94,7 @@ async def initialize():
         print(f"❌ Failed to fetch bot identity: {e}")
         sys.exit(1)
 
-    bot_username = f"@{bot_me.username}" if bot_me.username else "N/A"
+    bot_username = bot_me.username or "N/A"
     admin_ids = config.ADMIN_IDS or []
     if admin_ids:
         admin_ids_display = ", ".join(
