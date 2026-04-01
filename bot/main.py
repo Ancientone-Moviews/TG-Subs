@@ -24,6 +24,15 @@ running_loop = None
 app = None
 
 
+def mask_secret(value, visible_prefix=6, visible_suffix=4):
+    if value is None:
+        return None
+    text = str(value)
+    if len(text) <= visible_prefix + visible_suffix:
+        return text
+    return f"{text[:visible_prefix]}...{text[-visible_suffix:]}"
+
+
 def build_app():
     """Create the Telegram client after config validation."""
     return Client(
@@ -79,13 +88,39 @@ async def initialize():
             await db.add_plan(plan["days"], plan["price"])
             print(f"   ✅ Added {plan['days']} days plan (₹{plan['price']})")
 
+    try:
+        bot_me = await app.get_me()
+    except Exception as e:
+        print(f"❌ Failed to fetch bot details: {e}")
+        sys.exit(1)
+
+    bot_username = f"@{bot_me.username}" if bot_me.username else "N/A"
+    config_values = [
+        ("BOT_TOKEN", mask_secret(config.BOT_TOKEN)),
+        ("API_ID", config.API_ID),
+        ("API_HASH", mask_secret(config.API_HASH)),
+        ("OWNER_ID", config.OWNER_ID),
+        ("ADMIN_IDS", config.ADMIN_IDS),
+        ("SUBSCRIPTION_GROUP_ID", config.SUBSCRIPTION_GROUP_ID),
+        ("SUBSCRIPTION_GROUP_NAME", config.SUBSCRIPTION_GROUP_NAME),
+        ("LOGS_CHANNEL_ID", config.LOGS_CHANNEL_ID),
+        ("MONGODB_URI", mask_secret(config.MONGODB_URI)),
+        ("DB_NAME", config.DB_NAME),
+        ("CURRENCY", config.CURRENCY),
+        ("PAYMENT_PROOF_REQUIRED", config.PAYMENT_PROOF_REQUIRED),
+        ("DEFAULT_PLANS", config.DEFAULT_PLANS),
+        ("AUTO_APPROVE_VOUCHERS", config.AUTO_APPROVE_VOUCHERS),
+        ("AUTO_APPROVE_GIFTCARDS", config.AUTO_APPROVE_GIFTCARDS),
+        ("PAYMENT_TIMEOUT", config.PAYMENT_TIMEOUT),
+        ("MESSAGE_DELETE_TIMEOUT", config.MESSAGE_DELETE_TIMEOUT),
+        ("BASE_URL", config.BASE_URL),
+    ]
+
     print(f"\n✅ Bot configured:")
-    print(f"   Bot Token: {config.BOT_TOKEN[:20]}...")
-    print(f"   Owner ID: {config.OWNER_ID}")
-    print(f"   Admin IDs: {config.ADMIN_IDS}")
-    print(f"   Group ID: {config.SUBSCRIPTION_GROUP_ID}")
-    print(f"   Group Name: {config.SUBSCRIPTION_GROUP_NAME}")
-    print(f"   Database: {config.DB_NAME}")
+    print(f"   Bot ID: {bot_me.id}")
+    print(f"   Bot Username: {bot_username}")
+    for label, value in config_values:
+        print(f"   {label}: {value}")
     print(f"   Total Plans: {len(plans)}")
 
     print("\n" + "=" * 50)
