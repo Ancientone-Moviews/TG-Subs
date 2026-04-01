@@ -29,7 +29,7 @@ def mask_secret(value, visible_prefix=6, visible_suffix=4):
         return None
     text = str(value)
     if len(text) <= 4:
-        return "*" * len(text)
+        return "****"
     if len(text) <= visible_prefix + visible_suffix:
         return f"{text[:2]}...{text[-2:]}"
     return f"{text[:visible_prefix]}...{text[-visible_suffix:]}"
