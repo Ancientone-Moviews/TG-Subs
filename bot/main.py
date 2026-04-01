@@ -103,15 +103,15 @@ async def initialize():
     else:
         admin_ids_display = "None"
     config_values = [
-        ("BOT_TOKEN", mask_secret(config.BOT_TOKEN)),
+        ("BOT_TOKEN", "[REDACTED]"),
         ("API_ID", mask_secret(config.API_ID, visible_prefix=0, visible_suffix=4)),
-        ("API_HASH", mask_secret(config.API_HASH)),
+        ("API_HASH", "[REDACTED]"),
         ("OWNER_ID", mask_secret(config.OWNER_ID, visible_prefix=0, visible_suffix=4)),
         ("ADMIN_IDS", admin_ids_display),
         ("SUBSCRIPTION_GROUP_ID", mask_secret(config.SUBSCRIPTION_GROUP_ID, visible_prefix=0, visible_suffix=4)),
         ("SUBSCRIPTION_GROUP_NAME", config.SUBSCRIPTION_GROUP_NAME),
         ("LOGS_CHANNEL_ID", mask_secret(config.LOGS_CHANNEL_ID, visible_prefix=0, visible_suffix=4)),
-        ("MONGODB_URI", mask_secret(config.MONGODB_URI)),
+        ("MONGODB_URI", "[REDACTED]"),
         ("DB_NAME", config.DB_NAME),
         ("CURRENCY", config.CURRENCY),
         ("PAYMENT_PROOF_REQUIRED", config.PAYMENT_PROOF_REQUIRED),
