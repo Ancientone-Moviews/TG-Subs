@@ -91,14 +91,17 @@ async def initialize():
     try:
         bot_me = await app.get_me()
     except Exception as e:
-        print(f"❌ Failed to fetch bot identity; startup cannot verify configuration: {e}")
+        print(f"❌ Failed to fetch bot identity: {e}")
         sys.exit(1)
 
     bot_username = f"@{bot_me.username}" if bot_me.username else "N/A"
     admin_ids = config.ADMIN_IDS or []
-    admin_ids_display = ", ".join(
-        mask_secret(admin_id, visible_prefix=0, visible_suffix=4) for admin_id in admin_ids
-    ) or "None"
+    if admin_ids:
+        admin_ids_display = ", ".join(
+            mask_secret(admin_id, visible_prefix=0, visible_suffix=4) for admin_id in admin_ids
+        )
+    else:
+        admin_ids_display = "None"
     config_values = [
         ("BOT_TOKEN", mask_secret(config.BOT_TOKEN)),
         ("API_ID", mask_secret(config.API_ID, visible_prefix=0, visible_suffix=4)),
