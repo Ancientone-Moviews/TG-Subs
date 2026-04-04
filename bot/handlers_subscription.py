@@ -19,6 +19,21 @@ def set_database(database: SubscriptionDB):
     global db
     db = database
 
+@Client.on_message(filters.private, group=0)
+async def debug_incoming_private_message(client: Client, message: Message):
+    """Log incoming private messages so deployment logs show whether updates arrive."""
+    try:
+        user_id = getattr(message.from_user, "id", "unknown")
+        text = message.text or message.caption or "<non-text>"
+        print(f"📨 Private update from {user_id}: {text[:120]}")
+    except Exception as e:
+        print(f"⚠️ Failed to log incoming private message: {e}")
+
+@Client.on_message(filters.command('ping') & filters.private, group=1)
+async def ping_command(client: Client, message: Message):
+    """Cheap liveness check independent of database/business logic."""
+    await message.reply_text("pong", quote=True)
+
 @Client.on_message(filters.command('start'), group=10)
 async def start_command(client: Client, message: Message):
     """Start command - Show subscription options"""

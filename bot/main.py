@@ -199,6 +199,20 @@ async def start_bot():
     try:
         print("🔌 Connecting to Telegram...")
         async with app:
+            try:
+                me = await app.get_me()
+                print(f"🤖 Logged in as @{me.username} (id={me.id})")
+            except Exception as e:
+                print(f"⚠️ Failed to fetch bot identity: {e}")
+
+            # Long polling will not receive updates if a webhook is still configured.
+            try:
+                if hasattr(app, "delete_webhook"):
+                    await app.delete_webhook()
+                    print("🧹 Cleared existing Telegram webhook for polling mode")
+            except Exception as e:
+                print(f"⚠️ Failed to clear webhook: {e}")
+
             set_runtime_status("starting", "Telegram client connected")
             await initialize()
 
