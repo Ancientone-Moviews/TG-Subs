@@ -4,6 +4,7 @@ Premium channel access management with anonymous mode and privacy protection
 """
 
 import asyncio
+import os
 from pyrogram import Client, errors
 from config import config, set_client, validate_config
 from database import SubscriptionDB
@@ -22,6 +23,11 @@ scheduler_task = None
 shutdown_event = None
 running_loop = None
 app = None
+health_server = None
+runtime_status = {
+    "state": "starting",
+    "detail": "Booting process",
+}
 
 
 def build_app():
@@ -48,6 +54,78 @@ def signal_handler(signum, frame):
         shutdown_event.set()
 
 
+def set_runtime_status(state: str, detail: str):
+    """Track current startup/runtime phase for logs and health checks."""
+    runtime_status["state"] = state
+    runtime_status["detail"] = detail
+    print(f"[status] {state}: {detail}")
+
+
+async def handle_healthcheck(reader, writer):
+    """Expose a minimal HTTP endpoint for platforms that require a bound PORT."""
+    try:
+        request_line = await reader.readline()
+        path = "/"
+        if request_line:
+            parts = request_line.decode("utf-8", errors="ignore").split()
+            if len(parts) >= 2:
+                path = parts[1]
+
+        while True:
+            line = await reader.readline()
+            if not line or line in (b"\r\n", b"\n"):
+                break
+
+        if path not in ("/", "/health", "/healthz"):
+            status_line = "HTTP/1.1 404 Not Found"
+            body = "not found\n"
+        else:
+            status_line = "HTTP/1.1 200 OK"
+            body = f"state={runtime_status['state']}\ndetail={runtime_status['detail']}\n"
+
+        response = (
+            f"{status_line}\r\n"
+            "Content-Type: text/plain; charset=utf-8\r\n"
+            f"Content-Length: {len(body.encode('utf-8'))}\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+            f"{body}"
+        )
+        writer.write(response.encode("utf-8"))
+        await writer.drain()
+    except Exception as e:
+        print(f"⚠️ Healthcheck server error: {e}")
+    finally:
+        writer.close()
+        await writer.wait_closed()
+
+
+async def start_health_server_if_needed():
+    """Bind an HTTP port when a platform provides PORT for readiness checks."""
+    global health_server
+
+    port = os.getenv("PORT")
+    if not port:
+        return
+
+    health_server = await asyncio.start_server(handle_healthcheck, host="0.0.0.0", port=int(port))
+    sockets = health_server.sockets or []
+    bound = sockets[0].getsockname() if sockets else f"0.0.0.0:{port}"
+    print(f"🌐 Healthcheck server listening on {bound}")
+
+
+async def stop_health_server():
+    """Shut down the auxiliary HTTP listener."""
+    global health_server
+
+    if health_server is None:
+        return
+
+    health_server.close()
+    await health_server.wait_closed()
+    health_server = None
+
+
 # Register signal handlers
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
@@ -55,6 +133,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 async def initialize():
     """Initialize bot and database."""
+    set_runtime_status("initializing", "Connecting to MongoDB")
     print("=" * 50)
     print("🤖 Telegram Subscription Bot Initializing...")
     print("=" * 50)
@@ -91,6 +170,7 @@ async def initialize():
     print("\n" + "=" * 50)
     print("✅ Bot is ready!")
     print("=" * 50)
+    set_runtime_status("ready", "Bot initialized successfully")
 
 
 async def start_bot():
@@ -99,6 +179,7 @@ async def start_bot():
 
     config_errors = validate_config()
     if config_errors:
+        set_runtime_status("error", "Invalid runtime configuration")
         print("❌ Configuration error:")
         for error in config_errors:
             print(f"   - {error}")
@@ -109,34 +190,45 @@ async def start_bot():
     shutdown_event = asyncio.Event()
     scheduler_task = None
 
+    await start_health_server_if_needed()
+
+    set_runtime_status("starting", "Starting Telegram client")
     app = build_app()
     set_client(app)
 
-    async with app:
-        await initialize()
+    try:
+        print("🔌 Connecting to Telegram...")
+        async with app:
+            set_runtime_status("starting", "Telegram client connected")
+            await initialize()
 
-        # Start scheduler task in background
-        print("\n📅 Starting background scheduler...")
-        scheduler_task = asyncio.create_task(handlers_scheduler.scheduler_task(app))
+            # Start scheduler task in background
+            print("\n📅 Starting background scheduler...")
+            scheduler_task = asyncio.create_task(handlers_scheduler.scheduler_task(app))
 
-        print("\n🚀 Bot started! Listening for messages...\n")
+            print("\n🚀 Bot started! Listening for messages...\n")
+            set_runtime_status("running", "Bot polling for updates")
 
-        # Keep the bot running until shutdown signal
-        await shutdown_event.wait()
+            # Keep the bot running until shutdown signal
+            await shutdown_event.wait()
 
-        print("\n\n👋 Shutting down bot...")
+            print("\n\n👋 Shutting down bot...")
+            set_runtime_status("stopping", "Shutdown requested")
 
-        # Cancel scheduler task
-        if scheduler_task and not scheduler_task.done():
-            scheduler_task.cancel()
-            try:
-                await scheduler_task
-            except asyncio.CancelledError:
-                pass
+            # Cancel scheduler task
+            if scheduler_task and not scheduler_task.done():
+                scheduler_task.cancel()
+                try:
+                    await scheduler_task
+                except asyncio.CancelledError:
+                    pass
+    finally:
+        await stop_health_server()
 
     scheduler_task = None
     shutdown_event = None
     running_loop = None
+    set_runtime_status("stopped", "Bot shutdown complete")
     print("✅ Bot shutdown complete")
 
 
@@ -158,9 +250,11 @@ async def main():
             raise
         except Exception as e:
             if "msg_id is too low" in str(e):
+                set_runtime_status("warning", "Telegram msg_id clock skew detected")
                 print("⚠️ Time synchronization error detected, but continuing with local IST date arithmetic for subscription expiry.")
                 print("💡 Ensure system time is synced (chrony / chronyc -a makestep), but subscription calculation will use IST now.")
                 return
+            set_runtime_status("error", str(e))
             print(f"❌ Bot error: {e}")
             raise
 

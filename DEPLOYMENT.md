@@ -79,13 +79,18 @@ git push origin main
 
 3. Go to https://render.com
    - Sign up
-   - Click "New +" → "Web Service"
+   - Preferred: Click "New +" → "Background Worker"
    - Connect GitHub repo
    - Select branch (main)
    - Set build command: `pip install -r requirements.txt`
-   - Set start command: `python main.py`
-   - Add environment variables (your .env contents)
-   - Deploy!
+   - Set start command: `python bot/main.py`
+   - Add environment variables (your `.env` contents)
+   - Deploy
+
+4. If you must use a Render Web Service instead of a Background Worker:
+   - Use the Docker deployment in this repo
+   - Start command remains `python bot/main.py`
+   - The bot now binds the provided `PORT` with a minimal health endpoint so Render can mark the service healthy
 
 **Free tier limits:**
 - 750 hours/month (always free)

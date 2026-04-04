@@ -19,8 +19,16 @@ class SubscriptionDB:
     async def connect(self):
         """Connect to MongoDB"""
         try:
-            self.client = motor.motor_asyncio.AsyncIOMotorClient(self.uri)
+            self.client = motor.motor_asyncio.AsyncIOMotorClient(
+                self.uri,
+                serverSelectionTimeoutMS=10000,
+                connectTimeoutMS=10000,
+                socketTimeoutMS=10000,
+            )
             self.db = self.client[self.db_name]
+
+            # Force server selection early so invalid URIs/network issues fail during startup.
+            await self.client.admin.command("ping")
             
             # Create indexes (don't create index on _id as it's automatically indexed and unique)
             await self.db["subscriptions"].create_index("user_id", unique=True)
